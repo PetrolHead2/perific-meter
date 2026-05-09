@@ -30,12 +30,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Fetch device list before the first sensor-data refresh so that
         # coordinator.devices is populated when sensor.py iterates it.
+        # Only "Phase" items are real Perific meters with packet data;
+        # "Reporter" and "Charger" items are Zaptec associations that
+        # never appear in getLatestPackets and would produce unknown sensors.
         raw_devices = await hub.fetch_devices()
         meter_coord.devices = [
             Device(id=item.id, name=item.name, type=item.item_type, mac=item.mac_address)
             for item in raw_devices
+            if item.item_type == "Phase"
         ]
-        _LOGGER.info("Perific: found %d device(s): %s", len(meter_coord.devices),
+        _LOGGER.info("Perific: found %d Phase device(s): %s", len(meter_coord.devices),
                      [d.name for d in meter_coord.devices])
 
         await meter_coord.async_config_entry_first_refresh()
