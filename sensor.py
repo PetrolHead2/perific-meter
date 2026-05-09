@@ -111,7 +111,7 @@ class PerificReporterSensorDescription(SensorEntityDescription):
 REPORTER_SENSOR_TYPES: tuple[PerificReporterSensorDescription, ...] = (
     PerificReporterSensorDescription(
         key="zaptec_allowed_current",
-        name="Zaptec Allowed Current",
+        name="Perific Zaptec Allowed Current",
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -120,7 +120,7 @@ REPORTER_SENSOR_TYPES: tuple[PerificReporterSensorDescription, ...] = (
     ),
     PerificReporterSensorDescription(
         key="zaptec_mains_fuse",
-        name="Mains Fuse",
+        name="Perific Mains Fuse",
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -129,7 +129,7 @@ REPORTER_SENSOR_TYPES: tuple[PerificReporterSensorDescription, ...] = (
     ),
     PerificReporterSensorDescription(
         key="zaptec_safe_mode_current",
-        name="Safe Mode Current",
+        name="Perific Safe Mode Current",
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -138,7 +138,7 @@ REPORTER_SENSOR_TYPES: tuple[PerificReporterSensorDescription, ...] = (
     ),
     PerificReporterSensorDescription(
         key="zaptec_charging_mode",
-        name="Charging Mode",
+        name="Perific Charging Mode",
         device_class=None,
         state_class=None,
         native_unit_of_measurement=None,

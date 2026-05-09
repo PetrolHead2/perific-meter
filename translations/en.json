@@ -24,10 +24,10 @@
       "current_l3": { "name": "Current L3" },
       "power_import_total": { "name": "Power Import" },
       "energy_import_total": { "name": "Energy Import" },
-      "zaptec_allowed_current": { "name": "Zaptec Allowed Current" },
-      "zaptec_mains_fuse": { "name": "Mains Fuse" },
-      "zaptec_safe_mode_current": { "name": "Safe Mode Current" },
-      "zaptec_charging_mode": { "name": "Charging Mode" }
+      "zaptec_allowed_current": { "name": "Perific Zaptec Allowed Current" },
+      "zaptec_mains_fuse": { "name": "Perific Mains Fuse" },
+      "zaptec_safe_mode_current": { "name": "Perific Safe Mode Current" },
+      "zaptec_charging_mode": { "name": "Perific Charging Mode" }
     }
   }
 }
