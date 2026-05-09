@@ -1,2 +1,2 @@
 
-from .client import Client, Token, LatestItemPackets, AccountOverviewResponse, Item, ItemPacket, LatestPackets
+from .client import Client, Token, LatestItemPackets, AccountOverviewResponse, Item, ItemPacket, LatestPackets, ItemPacketData

@@ -8,9 +8,19 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class PerificEntity(CoordinatorEntity[PerificCoordinator]):
+    """Base entity for Perific meter devices.
+
+    _attr_has_entity_name = True means HA prepends the device name in the UI.
+    _attr_name = None so each sensor's SensorEntityDescription.name is used
+    as the entity name directly — no manual prefix needed.
+    """
+
     _attr_has_entity_name = True
+    _attr_name = None
     device: Device
+
     def __init__(self, coordinator: PerificCoordinator, device_id: int) -> None:
         super().__init__(coordinator)
         device = coordinator.get_device(device_id)
@@ -24,5 +34,4 @@ class PerificEntity(CoordinatorEntity[PerificCoordinator]):
             manufacturer="Perific Technologies AB",
             model="Perific Max/One",
             name=self.device.name,
-            #sw_version="1.0.0",
         )

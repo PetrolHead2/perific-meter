@@ -2,31 +2,37 @@ import aiohttp
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
+
 class Token(BaseModel):
     token: str = Field(alias="Token")
     created: str = Field(alias="Created")
     valid_to: str = Field(alias="ValidTo")
-    
+
+
 class Item(BaseModel):
     id: int = Field(alias="ItemId")
     name: str = Field(alias="Name")
-    system_name: str|None = Field(alias="SystemName")
+    system_name: str | None = Field(alias="SystemName")
     item_category: str = Field(alias="ItemCategory")
     item_type: str = Field(alias="ItemType")
     item_sub_type: str = Field(alias="ItemSubType")
     mac_address: str = Field(alias="MacAddress")
     time_zone: str = Field(alias="TimeZone")
     creation_time: str = Field(alias="CreationTime")
-    
+
+
 class AccountOverviewResponse(BaseModel):
     items: list[Item] = Field(alias="Items")
 
+
 class ItemPacketData(BaseModel):
-    dv: Optional[int] = Field(default=None, alias="dv")
-    hiavg: Optional[List[float]] = Field(default=None, alias="hiavg")
-    huavg: Optional[List[float]] = Field(default=None, alias="huavg")
-    # himin: Optional[List[float]] = Field(alias="himin")
-    # himax: Optional[List[float]] = Field(alias="himax")
+    # PhaseRealTime packet fields (firmware 4.x)
+    iavg: Optional[List[float]] = Field(default=None, alias="iavg")    # current avg per phase (A)
+    imin: Optional[List[float]] = Field(default=None, alias="imin")    # current min per phase (A)
+    imax: Optional[List[float]] = Field(default=None, alias="imax")    # current max per phase (A)
+    # qmax is a cumulative energy counter per phase (raw units; 1 unit ≈ 0.184 J)
+    qmax: Optional[List[int]] = Field(default=None, alias="qmax")
+
 
 class ItemPacket(BaseModel):
     hdr: int = Field(alias="hdr")
@@ -39,31 +45,22 @@ class ItemPacket(BaseModel):
     rssi: int = Field(alias="rssi")
     data: ItemPacketData = Field(alias="data")
 
+
 class LatestPackets(BaseModel):
-    phase_day: Optional[ItemPacket] = Field(default=None, alias="PhaseDay")
-    phase_hour: Optional[ItemPacket] = Field(default=None, alias="PhaseHour")
-    phase_minute: Optional[ItemPacket] = Field(default=None, alias="PhaseMinute")
     phase_real_time: Optional[ItemPacket] = Field(default=None, alias="PhaseRealTime")
+
 
 class LatestItemPackets(BaseModel):
     item_id: int = Field(alias="ItemId")
     latest_packets: LatestPackets = Field(alias="LatestPackets")
-        
+
 
 class Client:
-    
+
     def __init__(self, host: str):
         self.host = host
-        
+
     async def authenticate(self, username: str, password: str) -> Token:
-        # PUT https://api.enegic.com/createtoken
-        # Payload: {"username": "your_username", "password": "your_password"}
-        # Example response:
-        # "TokenInfo": {
-        #     "Token": "<token>",
-        #     "Created": "2025-04-21T07:04:40.8966467Z",
-        #     "ValidTo": "2026-04-21T07:04:40.8966468Z"
-        # },
         url = f"{self.host}/createtoken"
         async with aiohttp.ClientSession() as session:
             async with session.put(
@@ -76,54 +73,62 @@ class Client:
                     data = await response.json()
                     token_info = data.get("TokenInfo")
                     if token_info:
-                        token_instance = Token(**token_info)
-                        return token_instance
-                    else:
-                        raise Exception("Invalid response: TokenInfo not found")
-                else:
-                    raise Exception(f"Authentication failed: {response.status} {response.text}")        
-    
+                        return Token(**token_info)
+                    raise Exception("Invalid response: TokenInfo not found")
+                raise Exception(f"Authentication failed: {response.status}")
+
     async def getLatestPackets(self, token: str) -> list[LatestItemPackets]:
-        # GET https://api.enegic.com/getlatestpackets
-        # Headers
-        # Authorization
         url = f"{self.host}/getlatestpackets"
         headers = {
             "X-Authorization": token,
             "Content-Type": "application/json",
         }
-        
         async with aiohttp.ClientSession() as session:
             async with session.put(url, headers=headers, timeout=10) as response:
                 if response.status == 200:
                     data = await response.json()
-                    latest_packets = [LatestItemPackets(**item) for item in data]
-                    return latest_packets
+                    return [LatestItemPackets(**item) for item in data]
                 elif response.status == 401:
                     raise AuthenticationError("Unauthorized access")
-                else:
-                    raise Exception(f"Failed to get latest packets: {response.status} {response.text}")
-    
+                raise Exception(f"Failed to get latest packets: {response.status}")
+
     async def getAccountOverview(self, token: str) -> AccountOverviewResponse:
-        # GET https://api.enegic.com/getaccountoverview
-        # Headers
-        # Authorization: <token>
         url = f"{self.host}/getaccountoverview"
         headers = {
             "X-Authorization": token,
             "Content-Type": "application/json",
         }
-        
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, timeout=10) as response:
                 if response.status == 200:
                     data = await response.json()
-                    account_overview = AccountOverviewResponse(**data)
-                    return account_overview
+                    return AccountOverviewResponse(**data)
                 elif response.status == 401:
                     raise AuthenticationError("Unauthorized access")
-                else:
-                    raise Exception(f"Failed to get account overview: {response.status} {response.text}")
+                raise Exception(f"Failed to get account overview: {response.status}")
+
+    async def getReporterSettings(self, token: str) -> dict | None:
+        url = f"{self.host}/getreporterssettingsforuser"
+        headers = {
+            "X-Authorization": token,
+            "Content-Type": "application/json",
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    reporters = data.get("ZaptecReporters", [])
+                    if not reporters:
+                        return None
+                    first = reporters[0]
+                    settings: dict = {}
+                    settings.update(first.get("SimpleSettings", {}))
+                    settings.update(first.get("UserSettings", {}))
+                    return settings
+                elif response.status == 401:
+                    raise AuthenticationError("Unauthorized access")
+                raise Exception(f"Failed to get reporter settings: {response.status}")
+
 
 class AuthenticationError(Exception):
     """Custom exception for authentication errors."""

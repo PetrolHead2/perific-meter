@@ -13,7 +13,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from .hub import Hub
-
 from .const import DOMAIN, API_URL
 
 _LOGGER = logging.getLogger(__name__)

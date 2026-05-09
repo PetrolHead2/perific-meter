@@ -1,16 +1,12 @@
 {
-  "domain": "perific",
-  "version": "0.0.1",
+  "domain": "perific_meter",
+  "version": "0.1.0",
   "name": "Perific Meter",
   "codeowners": ["@pokeyo-ab"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "",
-  "homekit": {},
   "iot_class": "cloud_polling",
   "quality_scale": "bronze",
-  "requirements": ["aiohttp>=3.11.0", "pydantic>=2.10.0"],
-  "ssdp": [],
-  "zeroconf": [],
-  "diagnostic": true
+  "requirements": ["aiohttp>=3.11.0", "pydantic>=2.10.0"]
 }
