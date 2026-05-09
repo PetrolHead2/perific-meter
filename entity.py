@@ -33,5 +33,5 @@ class PerificEntity(CoordinatorEntity[PerificCoordinator]):
             identifiers={(DOMAIN, self.device.id)},
             manufacturer="Perific Technologies AB",
             model="Perific Max/One",
-            name=self.device.name,
+            name=f"Perific {self.device.name}",
         )
