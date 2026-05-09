@@ -1,6 +1,6 @@
 {
   "domain": "perific_meter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Perific Meter",
   "codeowners": ["@pokeyo-ab"],
   "config_flow": true,
