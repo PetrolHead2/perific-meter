@@ -14,17 +14,19 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfElectricCurrent,
     UnitOfEnergy,
     UnitOfPower,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import PerificCoordinator, PerificReporterCoordinator
 from .entity import PerificEntity
-from .perific import ItemPacketData
+from .perific import ItemPacket, ItemPacketData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,6 +102,27 @@ METER_SENSOR_TYPES: tuple[PerificMeterSensorDescription, ...] = (
 )
 
 
+# ── Packet-level sensor descriptions (fields on ItemPacket, not ItemPacketData) ──
+
+@dataclass(frozen=True, kw_only=True)
+class PerificPacketSensorDescription(SensorEntityDescription):
+    """SensorEntityDescription for fields on the ItemPacket envelope (not .data)."""
+    value_fn: Callable[[ItemPacket], float | None]
+
+
+PACKET_SENSOR_TYPES: tuple[PerificPacketSensorDescription, ...] = (
+    PerificPacketSensorDescription(
+        key="rssi",
+        name="Signal Strength",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda pkt: pkt.rssi,
+    ),
+)
+
+
 # ── Reporter sensor descriptions ───────────────────────────────────────────────
 
 @dataclass(frozen=True, kw_only=True)
@@ -163,6 +186,8 @@ async def async_setup_entry(
     for device in meter_coord.devices:
         for desc in METER_SENSOR_TYPES:
             entities.append(PerificMeterSensor(meter_coord, device.id, desc))
+        for desc in PACKET_SENSOR_TYPES:
+            entities.append(PerificPacketSensor(meter_coord, device.id, desc))
 
     # Account-level reporter sensors (no device loop)
     for desc in REPORTER_SENSOR_TYPES:
@@ -203,6 +228,40 @@ class PerificMeterSensor(PerificEntity, SensorEntity):
             return None
         try:
             return self.entity_description.value_fn(packets.phase_real_time.data)
+        except Exception:
+            _LOGGER.exception(
+                "Error computing value for sensor '%s' on device %s",
+                self.entity_description.key,
+                self.device.id,
+            )
+            return None
+
+
+class PerificPacketSensor(PerificEntity, SensorEntity):
+    """Sensor entity for fields on the ItemPacket envelope (not .data)."""
+
+    entity_description: PerificPacketSensorDescription
+
+    def __init__(
+        self,
+        coordinator: PerificCoordinator,
+        device_id: int,
+        description: PerificPacketSensorDescription,
+    ) -> None:
+        PerificEntity.__init__(self, coordinator, device_id)
+        SensorEntity.__init__(self)
+        self.entity_description = description
+        self._attr_unique_id = f"{self.device.id}_{description.key}"
+        self._attr_name = description.name
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the sensor value extracted from the PhaseRealTime packet envelope."""
+        packets = self.coordinator.get_device_data(self.device.id)
+        if not packets or not packets.phase_real_time:
+            return None
+        try:
+            return self.entity_description.value_fn(packets.phase_real_time)
         except Exception:
             _LOGGER.exception(
                 "Error computing value for sensor '%s' on device %s",

@@ -27,7 +27,8 @@
       "zaptec_allowed_current": { "name": "Perific Zaptec Allowed Current" },
       "zaptec_mains_fuse": { "name": "Perific Mains Fuse" },
       "zaptec_safe_mode_current": { "name": "Perific Safe Mode Current" },
-      "zaptec_charging_mode": { "name": "Perific Charging Mode" }
+      "zaptec_charging_mode": { "name": "Perific Charging Mode" },
+      "rssi": { "name": "Signal Strength" }
     }
   }
 }
